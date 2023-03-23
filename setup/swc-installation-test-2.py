@@ -123,9 +123,7 @@ CHECKS = [
 
 CHECKER = {}
 
-_ROOT_PATH = _os.sep
-if _platform.system() == 'win32':
-    _ROOT_PATH = 'c:\\'
+_ROOT_PATH = 'c:\\' if _platform.system() == 'win32' else _os.sep
 
 
 class InvalidCheck (KeyError):
@@ -225,25 +223,31 @@ class DependencyError (Exception):
                 version = value[0]
                 break
         package = self.checker.name
-        for (s,v,p),url in self._setup_urls.items():
-            if (_fnmatch.fnmatch(system, s) and
-                    _fnmatch.fnmatch(version, v) and
-                    _fnmatch.fnmatch(package, p)):
-                return url
-        return self._default_url
+        return next(
+            (
+                url
+                for (s, v, p), url in self._setup_urls.items()
+                if (
+                    _fnmatch.fnmatch(system, s)
+                    and _fnmatch.fnmatch(version, v)
+                    and _fnmatch.fnmatch(package, p)
+                )
+            ),
+            self._default_url,
+        )
 
     def __str__(self):
         url = self.get_url()
         lines = [
             'check for {0} failed:'.format(self.checker.full_name()),
-            '  ' + self.message,
+            f'  {self.message}',
             '  For instructions on installing an up-to-date version, see',
-            '  ' + url,
-            ]
+            f'  {url}',
+        ]
         if self.causes:
             lines.append('  causes:')
             for cause in self.causes:
-                lines.extend('  ' + line for line in str(cause).splitlines())
+                lines.extend(f'  {line}' for line in str(cause).splitlines())
         return '\n'.join(lines)
 
 
@@ -430,10 +434,7 @@ class CommandDependency (Dependency):
             command = self.command + (self.exe_extension or '')
         if not stdin:
             stdin = self.stdin
-        if stdin:
-            popen_stdin = _subprocess.PIPE
-        else:
-            popen_stdin = None
+        popen_stdin = _subprocess.PIPE if stdin else None
         try:
             p = _subprocess.Popen(
                 [command] + list(self.version_options), stdin=popen_stdin,
@@ -456,7 +457,7 @@ class CommandDependency (Dependency):
                 ]
             for name,string in [('stdout', stdout), ('stderr', stderr)]:
                 if string:
-                    lines.extend([name + ':', string])
+                    lines.extend([f'{name}:', string])
             raise DependencyError(checker=self, message='\n'.join(lines))
         for name,string in [('stdout', stdout), ('stderr', stderr)]:
             if name == self.version_stream:
@@ -488,13 +489,13 @@ class CommandDependency (Dependency):
 
     def _get_version(self):
         version_stream = self._get_version_stream()
-        match = self.version_regexp.search(version_stream)
-        if not match:
+        if match := self.version_regexp.search(version_stream):
+            return match.group(1)
+        else:
             raise DependencyError(
                 checker=self,
                 message='no version string in output:\n{0}'.format(
                     version_stream))
-        return match.group(1)
 
 
 class VersionPlistCommandDependency (CommandDependency):
@@ -557,9 +558,8 @@ class VersionPlistCommandDependency (CommandDependency):
             checker=self,
             message=(
                 'nothing exists at any of the expected paths for {0}:\n    {1}'
-                ).format(
-                self.full_name(),
-                '\n    '.join(p for p in self.paths)))
+            ).format(self.full_name(), '\n    '.join(self.paths)),
+        )
 
 
 class UserTaskDependency (Dependency):
