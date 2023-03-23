@@ -199,8 +199,7 @@ def check_source_rmd(reporter, source_dir, parser):
     for pat in episode_rmd_files:
         for f in glob.glob(pat):
             data = read_markdown(parser, f)
-            dy = data['metadata']
-            if dy:
+            if dy := data['metadata']:
                 reporter.check_field(f, 'episode_rmd',
                                      dy, 'source', 'Rmd')
 
@@ -260,8 +259,7 @@ def read_all_markdown(source_dir, parser):
     result = {}
     for pat in all_patterns:
         for filename in glob.glob(pat):
-            data = read_markdown(parser, filename)
-            if data:
+            if data := read_markdown(parser, filename):
                 result[filename] = data
     return result
 
@@ -310,10 +308,14 @@ def check_fileset(source_dir, reporter, filenames_present):
 def create_checker(args, filename, info):
     """Create appropriate checker for file."""
 
-    for (pat, cls) in CHECKERS:
-        if pat.search(filename):
-            return cls(args, filename, **info)
-    return NotImplemented
+    return next(
+        (
+            cls(args, filename, **info)
+            for pat, cls in CHECKERS
+            if pat.search(filename)
+        ),
+        NotImplemented,
+    )
 
 class CheckBase:
     """Base class for checking Markdown files."""
