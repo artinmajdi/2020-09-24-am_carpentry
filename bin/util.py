@@ -68,7 +68,7 @@ class Reporter:
         if isinstance(location, type(None)):
             return message
         elif isinstance(location, str):
-            return location + ': ' + message
+            return f'{location}: {message}'
         elif isinstance(location, tuple):
             return '{0}:{1}: '.format(*location) + message
 

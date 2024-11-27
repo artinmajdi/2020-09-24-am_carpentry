@@ -209,15 +209,16 @@ def check_emails(emails):
     an '@', and more characters.  It should not contain the default contact
     """
 
-    # YAML automatically loads list-like strings as lists.
-    if (isinstance(emails, list) and len(emails) >= 0):
-        for email in emails:
-            if ((not bool(re.match(EMAIL_PATTERN, email))) or (email == DEFAULT_CONTACT_EMAIL)):
-                return False
-    else:
+    if not isinstance(emails, list) or len(emails) < 0:
         return False
 
-    return True
+    return not any(
+        (
+            (not bool(re.match(EMAIL_PATTERN, email)))
+            or (email == DEFAULT_CONTACT_EMAIL)
+        )
+        for email in emails
+    )
 
 
 def check_eventbrite(eventbrite):

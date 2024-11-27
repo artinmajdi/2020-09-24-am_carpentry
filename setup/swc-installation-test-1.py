@@ -41,7 +41,7 @@ __version__ = '0.2'
 def check():
     if _sys.version_info < (3, 3):
         print('check for Python version (python):')
-        print('outdated version of Python: ' + _sys.version)
+        print(f'outdated version of Python: {_sys.version}')
         return False
     return True
 
@@ -49,7 +49,7 @@ def check():
 if __name__ == '__main__':
     if check():
         print('Passed')
-        print('version of Python: ' + _sys.version)
+        print(f'version of Python: {_sys.version}')
     else:
         print('Failed')
         print('Install a current version of Python 3!')
